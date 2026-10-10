@@ -4,9 +4,13 @@ out vec4 color;
 
 uniform sampler2D image;
 uniform vec4 spriteColor;
+uniform vec4 srcRect;
 
 void main()
 {
-    vec4 sampled = vec4(spriteColor.rgb, texture(image, TexCoords).r * spriteColor.a);
-    color = sampled;
+    ivec2 texel = ivec2(srcRect.xy) + ivec2(TexCoords);
+    ivec2 maxTexel = ivec2(srcRect.xy + srcRect.zw) - 1;
+    texel = clamp(texel, ivec2(srcRect.xy), maxTexel);
+    float a = texelFetch(image, texel, 0).r * spriteColor.a;
+    color = vec4(spriteColor.rgb * a, a);
 }
