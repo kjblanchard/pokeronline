@@ -32,7 +32,21 @@ function buttontest.Update()
       log.Warn(b.name .. " clicked! (count " .. b.clicks .. ")")
     end
   end
-  -- Right click button 3 to toggle button 2, to test inactive buttons
+  -- Touch logging, to check positions and gestures on device
+  if input.IsTouchJustPressed() then
+    local x, y = input.GetTouchPos()
+    log.Warn("touch down at " .. x .. ", " .. y)
+  elseif input.IsTouchJustReleased() then
+    local x, y = input.GetTouchPos()
+    log.Warn("touch up at " .. x .. ", " .. y)
+  end
+  if input.IsTouchTapped() then
+    log.Warn("touch tapped")
+  end
+  if input.IsTouchTwoFingerTapped() then
+    log.Warn("two finger tapped")
+  end
+  -- Right click (or two finger tap) button 3 to toggle button 2, to test inactive buttons
   local b2, b3 = buttons[2], buttons[3]
   if b2 and b3 and ui.IsButtonClicked(b3.userdata, input.MouseButtons.Right) then
     b2.active = not b2.active

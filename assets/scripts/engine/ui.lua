@@ -118,9 +118,15 @@ end
 
 ---@param o userdata button object
 ---@param button integer|nil a value in input.MouseButtons, defaults to Left
----@return boolean true on the tick the mouse button was pressed while over the button
+---@return boolean true on the tick the mouse button was pressed while over the button.
+---Touch counts too, a tap is Left and a two finger tap is Right
 function ui.IsButtonClicked(o, button)
-  return ui.IsButtonHovered(o) and input.IsMouseButtonJustPressed(button)
+  button = button or input.MouseButtons.Left
+  if not ui.IsButtonHovered(o) then return false end
+  if input.IsMouseButtonJustPressed(button) then return true end
+  if button == input.MouseButtons.Left then return input.IsTouchTapped() end
+  if button == input.MouseButtons.Right then return input.IsTouchTwoFingerTapped() end
+  return false
 end
 
 function ui.DrawObject(o)
