@@ -11,6 +11,7 @@ e.Graphics.SetLogicalWorld(c.WorldWidth, c.WorldHeight)
 e.Sound.SetGameVolume(c.BGMVolume)
 e.UI.SetRoot(e.UI.CreateObject("Root", { 0, 0, 0, 0 }, nil, 0))
 e.UI.CreateUIFromLuaFile("ui/debugTown")
+require("ui.buttontest").Init()
 -- e.Game.PreloadAllScenes()
 -- e.Game.LoadScene(c.DefaultScene)
 --Testing playing an animation

@@ -2,6 +2,7 @@ local gs = require("gamestate")
 local gfx = require("engine.graphics")
 local sprite = require("engine.sprite")
 local anim = require("engine.animator")
+local input = require("engine.input")
 local constants = require("constants")
 local ui = {}
 
@@ -81,6 +82,47 @@ function ui.CreateNineslice(o, tx, color, offset)
   return UI.CreateNineSlice(o, tx, color, offset)
 end
 
+---Matches UIButtonMouseStatus in button.h
+ui.ButtonMouseStatus = {
+  None = 0,
+  JustOverlap = 1,
+  Overlap = 2,
+  JustLeftOverlap = 3,
+}
+
+---Makes the object a button, which tracks mouse overlap of its rect each tick
+---@param o userdata ptr to object already created
+---@return userdata the button, likely the same ptr passed in with o
+function ui.CreateButton(o)
+  return UI.CreateUIButton(o)
+end
+
+---@param o userdata button object
+---@return integer a value in ui.ButtonMouseStatus
+function ui.GetButtonMouseStatus(o)
+  return UI.GetButtonMouseStatus(o)
+end
+
+---@param o userdata button object
+---@param isActive boolean inactive buttons stop checking the mouse and report None
+function ui.SetButtonActive(o, isActive)
+  UI.SetButtonActive(o, isActive and true or false)
+end
+
+---@param o userdata button object
+---@return boolean true while the mouse is over the button
+function ui.IsButtonHovered(o)
+  local status = ui.GetButtonMouseStatus(o)
+  return status == ui.ButtonMouseStatus.JustOverlap or status == ui.ButtonMouseStatus.Overlap
+end
+
+---@param o userdata button object
+---@param button integer|nil a value in input.MouseButtons, defaults to Left
+---@return boolean true on the tick the mouse button was pressed while over the button
+function ui.IsButtonClicked(o, button)
+  return ui.IsButtonHovered(o) and input.IsMouseButtonJustPressed(button)
+end
+
 function ui.DrawObject(o)
   UI.DrawUIObject(o)
 end
@@ -138,6 +180,9 @@ local function handlUITypeCreation(data, objectTable)
     handleUINinesliceCreation(data, objectTable)
   elseif t == "text" then
     handleUITextCreation(data, objectTable)
+  elseif t == "button" then
+    objectTable.t = "button"
+    ui.CreateButton(objectTable.userdata)
   end
 end
 
