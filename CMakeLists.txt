@@ -23,6 +23,8 @@ option(SDL_GL "Does this use SDL GL backend?" OFF)
 option(SDL_RENDERER "Does this use SDL renderer backend?" ON)
 option(STEAM_ENABLED "Does this use steam as a platform?" OFF)
 option(STEAM_APPID_FILE "Write steam_appid.txt next to binary (dev only)" ON)
+option(IOS_ENABLE_CODE_SIGNING "Sign iOS builds, needed to install on a device" OFF)
+set(IOS_BUNDLE_ID "com.supergoon.pokeronline" CACHE STRING "Bundle identifier for iOS builds")
 include(FetchContent)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/Debug)
@@ -70,22 +72,35 @@ if(MSVC)
   # set(INSTALL_DIR
 elseif(APPLE)
   if(CMAKE_GENERATOR STREQUAL "Xcode")
-    message(STATUS "Setting Build to Universal Binary")
-    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "" FORCE)
+    # iOS gets its arch from the command line (arm64), x86_64 doesn't exist for iphoneos
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+      message(STATUS "Setting Build to Universal Binary")
+      set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "" FORCE)
+    endif()
     set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/cmake/PokerOnline.entitlements")
     set(XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/cmake/PokerOnline.entitlements")
     set_target_properties(
       ${EXECUTABLE_TARGET_NAME}
       PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/cmake/PokerOnline.entitlements"
-      # XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-      XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual"
-      XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "16.3"
+      XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${IOS_BUNDLE_ID}"
       XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "H34NGW287W"
-      # when building on github, we don't want to sign anything cause there is no cert
-      XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
-      XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
-      # XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
     )
+    if(CMAKE_SYSTEM_NAME STREQUAL "iOS" AND IOS_ENABLE_CODE_SIGNING)
+      # device builds must be signed to install, uses -allowProvisioningUpdates from the makefile
+      set_target_properties(
+        ${EXECUTABLE_TARGET_NAME}
+        PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+      )
+    else()
+      set_target_properties(
+        ${EXECUTABLE_TARGET_NAME}
+        PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual"
+        # when building on github, we don't want to sign anything cause there is no cert
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+      )
+    endif()
     #Needed for codesigning and cpack
     set(CMAKE_SKIP_RPATH TRUE)
     if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
@@ -98,7 +113,11 @@ elseif(APPLE)
 endif(MSVC)
 
 if(APPLE)
-  set_target_properties(${EXECUTABLE_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/Info.plist)
+  if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set_target_properties(${EXECUTABLE_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/iOS-Info.plist)
+  else()
+    set_target_properties(${EXECUTABLE_TARGET_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/Info.plist)
+  endif()
   set_source_files_properties(${ICON_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
   set_source_files_properties(${CMAKE_SOURCE_DIR}/cmake/Info.plist PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
   set_source_files_properties(etf.sg PROPERTIES MACOSX_PACKAGE_LOCATION Resources/data)

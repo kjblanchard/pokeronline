@@ -23,6 +23,9 @@ PACKAGE_COMMAND ?= cpack --config build/CPackConfig.cmake -C $(BUILD_TYPE)
 ADDITIONAL_OPTIONS ?=
 ADDITIONAL_BUILD_COMMANDS ?=
 IOS_BUILD_COMMANDS = "-- -allowProvisioningUpdates"
+IOS_BUNDLE_ID ?= com.supergoon.pokeronline
+# UILaunchScreen in cmake/iOS-Info.plist needs 14+
+IOS_DEPLOYMENT_TARGET ?= 15.0
 SGFORGE ?= sgforge
 # default, should be used after a rebuild of some sort.
 UNAME_S := $(shell uname -s 2>/dev/null)
@@ -86,29 +89,32 @@ bsteamrebuild:
 erebuild:
 	@$(MAKE) CMAKE_GENERATOR=$(BACKUP_GENERATOR) CONFIGURE_COMMAND=$(EMSCRIPTEN_CONFIGURE_COMMAND) clean configure build
 irebuild:
-	$(MAKE) CMAKE_GENERATOR=$(APPLE_GENERATOR) ADDITIONAL_OPTIONS="-DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DTARGET_OS_IOS=TRUE -DDISABLE_WERROR=YES" clean configure build package
+	$(MAKE) CMAKE_GENERATOR=$(APPLE_GENERATOR) SYSTEM_PACKAGES=OFF ADDITIONAL_OPTIONS="-DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$(IOS_DEPLOYMENT_TARGET) -DIOS_BUNDLE_ID=$(IOS_BUNDLE_ID) -DDISABLE_WERROR=YES" clean configure build
 iosrebuild:
 	$(MAKE) \
 		CMAKE_GENERATOR=$(APPLE_GENERATOR) \
+		SYSTEM_PACKAGES=OFF \
 		ADDITIONAL_BUILD_COMMANDS=$(IOS_BUILD_COMMANDS) \
-		ADDITIONAL_OPTIONS="-DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DTARGET_OS_IOS=TRUE" \
+		ADDITIONAL_OPTIONS="-DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=$(IOS_DEPLOYMENT_TARGET) -DIOS_BUNDLE_ID=$(IOS_BUNDLE_ID) -DIOS_ENABLE_CODE_SIGNING=ON -DDISABLE_WERROR=YES" \
 		IMGUI_DEBUGGING=OFF \
-		clean configure build package
+		clean configure build
 	# Custom run commands
 erun:
 	@emrun --no_browser --port 6931 ./build/PokerOnline.html
 
+# Boot a simulator first (open -a Simulator, or xcrun simctl boot <udid> from idevices)
 irun:
-	xcrun simctl install 0A997707-21D6-4A93-AA1E-E952675BA32D build/Debug/PokerOnline.app
+	xcrun simctl install booted build/$(BUILD_TYPE)/$(EXECUTABLE_NAME).app
+	xcrun simctl launch --console booted $(IOS_BUNDLE_ID)
 idevices:
 	xcrun simctl list devices
 #for debugging on ios simulator, in lldb
 # use idevices and make sure it's booted and installed with irun.
 idebug:
-	xcrun simctl launch --wait-for-debugger booted com.supergoon.rpg
+	xcrun simctl launch --wait-for-debugger booted $(IOS_BUNDLE_ID)
 	lldb \
     -o "platform select ios-simulator" \
-    -o "platform connect 0A997707-21D6-4A93-AA1E-E952675BA32D" \
+    -o "platform connect $$(xcrun simctl list devices booted | grep -m1 -oE '[0-9A-F-]{36}')" \
     -o "process attach --name PokerOnline" \
 	 # br set --name InitializeGraphicsSystem
 	# breakpoint set --name SDL_main
