@@ -17,8 +17,10 @@ option(LINK_M "Should we link against the M, only useful on linux builds locally
 # This needs to be set to off for instruments to work
 option(DEBUG_ASAN "Use asan for leak and address sanitization checks when debug mode" OFF)
 option(SDL_BACKEND "Does this use SDL backend?" ON)
-option(SDL_GL "Does this use SDL GL backend?" ON)
-option(SDL_RENDERER "Does this use SDL renderer backend?" OFF)
+# Exactly one of SDL_GL / SDL_RENDERER. SDL_Renderer is the default; the OpenGL
+# backend is kept around as a fallback to diff against.
+option(SDL_GL "Does this use SDL GL backend?" OFF)
+option(SDL_RENDERER "Does this use SDL renderer backend?" ON)
 option(STEAM_ENABLED "Does this use steam as a platform?" OFF)
 option(STEAM_APPID_FILE "Write steam_appid.txt next to binary (dev only)" ON)
 include(FetchContent)
