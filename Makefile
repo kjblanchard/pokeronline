@@ -7,7 +7,7 @@ WINDOWS_GENERATOR ?= "Visual Studio 18 2026"
 APPLE_GENERATOR ?= Xcode
 CONFIGURE_COMMAND ?= "cmake"
 EMSCRIPTEN_CONFIGURE_COMMAND = "emcmake cmake"
-IMGUI_DEBUGGING ?= ON
+IMGUI_DEBUGGING ?= OFF
 # Graphics backend - exactly one of these must be ON.
 SDL_GL ?= OFF
 SDL_RENDERER ?= ON
