@@ -23,13 +23,13 @@ function buttontest.Update()
   for _, b in ipairs(buttons) do
     local status = ui.GetButtonMouseStatus(b.userdata)
     if status == ui.ButtonMouseStatus.JustOverlap then
-      log.Info(b.name .. " hover enter")
+      log.Warn(b.name .. " hover enter")
     elseif status == ui.ButtonMouseStatus.JustLeftOverlap then
-      log.Info(b.name .. " hover leave")
+      log.Warn(b.name .. " hover leave")
     end
     if ui.IsButtonClicked(b.userdata) then
       b.clicks = b.clicks + 1
-      log.Info(b.name .. " clicked! (count " .. b.clicks .. ")")
+      log.Warn(b.name .. " clicked! (count " .. b.clicks .. ")")
     end
   end
   -- Right click button 3 to toggle button 2, to test inactive buttons
@@ -37,7 +37,7 @@ function buttontest.Update()
   if b2 and b3 and ui.IsButtonClicked(b3.userdata, input.MouseButtons.Right) then
     b2.active = not b2.active
     ui.SetButtonActive(b2.userdata, b2.active)
-    log.Info(b2.name .. " active: " .. tostring(b2.active))
+    log.Warn(b2.name .. " active: " .. tostring(b2.active))
   end
 end
 
